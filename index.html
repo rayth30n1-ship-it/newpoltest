@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Layered Political Test</title>
+<style>
+:root{--bg:#eef1f5;--card:#fff;--ink:#1b2433;--mute:#5d6878;--line:#d5dbe4;--a:#0f7b8a;--b:#7a3b69;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--card:#1b2431;--ink:#e8edf4;--mute:#9aa6b7;--line:#2e394a;--a:#4cc0d0;--b:#d98bc3}}
+:root[data-theme="dark"]{--bg:#121821;--card:#1b2431;--ink:#e8edf4;--mute:#9aa6b7;--line:#2e394a;--a:#4cc0d0;--b:#d98bc3}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.2;margin:0}
+h1{font-size:2rem}h2{font-size:1.3rem}h3{font-size:1.05rem}
+p{margin:.6em 0}.mute{color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+button:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.go{background:var(--a);color:#fff;border:0;border-radius:10px;padding:12px 22px;font-weight:600}
+:root[data-theme="dark"] .go,:root:not([data-theme="light"]) .go{color:#06222a}
+.ghost{background:none;border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--mute)}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:0 0 18px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--a);transition:width .25s}
+.q{font-family:Georgia,serif;font-size:1.35rem;line-height:1.35;margin:6px 0 22px}
+.layer{color:var(--b);font-weight:600;font-size:.9rem}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;background:none;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.opts button:hover{border-color:var(--a);background:color-mix(in srgb,var(--a) 10%,transparent)}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+.match{margin:12px 0}
+.match .t{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.match .m{height:10px;border-radius:5px;background:var(--line);margin-top:5px;overflow:hidden}
+.match .m i{display:block;height:100%;background:var(--a)}
+.far .m i{background:var(--b)}
+.dim{margin:14px 0}
+.dim .lab{display:flex;justify-content:space-between;font-size:.82rem;color:var(--mute);gap:8px}
+.dim .lab span:last-child{text-align:right}
+.track{position:relative;height:8px;background:var(--line);border-radius:4px;margin:6px 0}
+.track::after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:14px;background:var(--mute);opacity:.5}
+.track b{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--b);border:3px solid var(--card);box-shadow:0 0 0 1px var(--b)}
+.lh{margin:26px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<div id="app"></div>
+</main>
+<script>
+// Dimensions: [layer, low pole, high pole]
+const D=[
+["Structure","Hereditary or sacral rule","Popular consent"],
+["Structure","Decentralized","Centralized"],
+["Economy","Communal ownership","Private ownership"],
+["Economy","State-directed","Free market"],
+["Social order","Egalitarian","Hierarchical"],
+["Social order","Progressive, secular","Traditional, religious"],
+["Values","Order and security","Liberty"],
+["Values","Technology-skeptic","Technology-embracing"],
+["Time","Restore the past","Build something new"],
+["Time","Gradual, preserving","Accelerating, disruptive"],
+["Methods","Reform","Revolution"],
+["Methods","Voluntary, nonviolent","Forceful"],
+["Scope","Own nation or group first","Humanity as a whole"],
+["Scope","Individual","Collective"]
+];
+// Questions: [dimension, direction (1 = agreeing pushes toward high pole), text]
+const Q=[
+[0,1,"Legitimate rulers are those chosen by the people they govern."],
+[0,-1,"Power is best passed down through family lines or granted by divine or sacred authority."],
+[1,1,"A strong central authority should be able to override local rules for the sake of unity."],
+[1,-1,"Most decisions should be made by small, local communities."],
+[2,1,"People should be free to own land, businesses and capital without limit."],
+[2,-1,"Land, factories and major resources should belong to the community, not individuals."],
+[3,1,"Prices and wages should be set by voluntary exchange, not by government."],
+[3,-1,"The state should plan or direct key parts of the economy."],
+[4,1,"A healthy society has clear ranks, with some people rightly holding more authority than others."],
+[4,-1,"Any rank or class distinction needs strong justification, and most cannot meet it."],
+[5,1,"Religion and inherited tradition should shape law and public life."],
+[5,-1,"Law should be built on reason and secular values, not tradition or faith."],
+[6,1,"Individual freedom matters more than social order when the two collide."],
+[6,-1,"A stable, orderly society is worth some loss of personal freedom."],
+[7,1,"Technology and growth are the main route to a better future."],
+[7,-1,"Industrial technology has damaged us, and we should scale it back."],
+[8,1,"The best society has not been built yet."],
+[8,-1,"Past societies understood things we have since lost, and we should recover them."],
+[9,1,"Speeding up social and technological change is better than slowing it down, even if it is chaotic."],
+[9,-1,"Change should be slow and cautious, preserving what already works."],
+[10,1,"Existing institutions are too broken to fix, and they need to be replaced."],
+[10,-1,"Lasting change comes through patient reform within existing institutions."],
+[11,1,"Using force against opponents is justified when the cause is important enough."],
+[11,-1,"Social order should rest only on voluntary cooperation and consent."],
+[12,1,"Our obligations to all humans matter as much as those to our own country or people."],
+[12,-1,"Our own nation, faith or people deserve priority over outsiders."],
+[13,1,"The needs of the community should outweigh individual preferences."],
+[13,-1,"The individual, not the group, is the basic unit of moral and political concern."]
+];
+// Ideology profiles across the 14 dimensions (0 = low pole, 100 = high pole)
+const I=[
+["Absolute monarchism",[5,80,70,50,90,90,25,40,5,10,30,50,25,60]],
+["Constitutional monarchism",[55,50,65,60,65,80,55,50,25,10,5,15,35,50]],
+["Feudalism",[5,10,60,20,95,90,30,15,3,5,20,60,15,70]],
+["Neoreaction / Dark Enlightenment",[10,70,85,80,85,60,35,75,35,60,55,50,20,30]],
+["Classical liberalism",[75,25,85,85,35,45,90,65,60,30,10,10,70,15]],
+["Social democracy",[85,60,40,40,30,35,75,60,65,25,5,5,75,65]],
+["Democratic socialism",[85,65,25,25,20,25,75,60,75,35,15,8,80,75]],
+["Marxism-Leninism",[50,95,5,5,45,30,20,70,85,70,90,85,85,95]],
+["Anarcho-communism",[90,3,5,10,3,15,90,55,85,60,85,40,90,85]],
+["Anarcho-capitalism",[75,3,98,98,40,40,92,75,70,55,40,25,60,5]],
+["Minarchist libertarianism",[75,15,92,92,40,50,90,65,55,30,10,10,60,10]],
+["Fascism",[15,95,50,40,90,80,5,60,40,75,75,95,3,95]],
+["Theocracy",[10,70,50,40,85,98,15,25,5,20,40,60,20,75]],
+["Social conservatism",[65,40,75,65,65,85,55,45,25,10,5,10,40,45]],
+["Progressivism",[80,55,45,40,25,15,70,70,85,50,20,10,85,60]],
+["Technocracy",[30,85,55,50,70,25,35,95,80,50,20,20,65,55]],
+["Accelerationism",[35,40,70,85,55,20,60,100,95,98,70,45,45,25]],
+["Anarcho-primitivism",[90,3,20,15,5,40,85,0,10,70,90,40,60,70]],
+["Eco-socialism / Green politics",[85,40,30,30,25,30,70,30,60,25,15,8,85,70]],
+["Syndicalism",[85,30,15,15,20,25,70,60,75,45,70,40,85,85]],
+["Distributism",[75,35,50,45,40,75,60,35,25,15,10,10,60,60]],
+["National conservatism",[65,60,60,55,55,75,40,50,35,25,10,25,5,60]],
+["Ethnonationalism",[30,75,55,45,75,80,25,45,25,45,45,70,2,80]],
+["Network states / Technofeudalism",[55,10,80,80,55,25,70,95,80,70,30,15,55,25]],
+["Corporatism / Guild order",[40,65,50,35,70,70,35,45,30,15,10,20,35,80]],
+["Military rule (stratocracy)",[10,90,50,40,85,60,10,50,40,35,60,90,20,70]],
+["Mutualism",[90,10,40,50,15,30,75,50,70,30,50,10,80,50]],
+["Georgism",[85,40,45,70,30,30,75,65,65,20,5,5,80,35]],
+["Civic republicanism",[90,60,45,45,35,40,50,55,65,30,35,30,60,65]],
+["Libertarian municipalism",[95,10,15,20,10,25,70,55,75,35,35,15,85,85]],
+["Authoritarian populism",[55,80,55,45,70,70,20,50,40,40,30,60,15,65]],
+["Benevolent despotism",[5,95,55,50,90,40,25,70,60,45,35,60,50,60]],
+["Transhumanism",[70,35,70,75,35,10,90,100,95,70,20,10,80,25]]
+];
+const OPT=[["Strongly agree",1],["Agree",.75],["Unsure or mixed",.5],["Disagree",.25],["Strongly disagree",0]];
+const app=document.getElementById("app");
+let i=0,ans=[];
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+function start(){
+  app.innerHTML=`<div class="card"><h1>The Layered Political Test</h1>
+  <p class="mute">Instead of one left-right score, this test measures 14 separate traits across 7 layers: structure of government, economy, social order, values, relationship to time, methods and scope.</p>
+  <p class="mute">There are ${Q.length} statements and no right answers. At the end you will see your full profile and the ${I.length} ideologies and government forms that match it most and least closely.</p>
+  <p><button class="go" id="s">Start the test</button></p>
+  <p class="mute" style="font-size:.85rem">A rough map, not a verdict. Each ideology profile is a simplified summary, and real adherents vary widely.</p></div>`;
+  document.getElementById("s").onclick=()=>{i=0;ans=[];ask()};
+}
+
+function ask(){
+  const q=Q[i],d=D[q[0]];
+  app.innerHTML=`<div class="bar"><i style="width:${i/Q.length*100}%"></i></div>
+  <div class="card"><div class="layer">${d[0]}</div><div class="mute" style="font-size:.85rem">Statement ${i+1} of ${Q.length}</div>
+  <p class="q">${esc(q[2])}</p>
+  <div class="opts">${OPT.map((o,k)=>`<button data-k="${k}">${o[0]}</button>`).join("")}</div>
+  <div class="row"><button class="ghost" id="back" ${i?"":"disabled"}>Back</button><span class="mute" style="font-size:.85rem">Skip nothing: "Unsure" counts as neutral</span></div></div>`;
+  app.querySelectorAll(".opts button").forEach(b=>b.onclick=()=>{ans[i]=OPT[+b.dataset.k][1];i++;i<Q.length?ask():result()});
+  document.getElementById("back").onclick=()=>{if(i){i--;ask()}};
+}
+
+function result(){
+  const s=D.map((_,k)=>{let t=0,n=0;Q.forEach((q,j)=>{if(q[0]===k){t+=q[1]>0?ans[j]:1-ans[j];n++}});return Math.round(t/n*100)});
+  const m=I.map(([n,v])=>[n,Math.round(100-v.reduce((a,x,k)=>a+Math.abs(x-s[k]),0)/v.length)]).sort((a,b)=>b[1]-a[1]);
+  const row=(r,c)=>`<div class="match ${c}"><div class="t"><span>${r[0]}</span><span>${r[1]}%</span></div><div class="m"><i style="width:${r[1]}%"></i></div></div>`;
+  let prof="",last="";
+  D.forEach((d,k)=>{
+    if(d[0]!==last){prof+=`<h3 class="lh">${d[0]}</h3>`;last=d[0]}
+    prof+=`<div class="dim"><div class="lab"><span>${d[1]}</span><span>${d[2]}</span></div><div class="track"><b style="left:${s[k]}%"></b></div></div>`;
+  });
+  app.innerHTML=`<div class="card"><h2>Your closest matches</h2>
+  <p class="mute">Similarity compares your whole 14-trait profile with each ideology, not a single label.</p>
+  ${m.slice(0,6).map(r=>row(r,"")).join("")}
+  <h2 class="lh">Furthest from you</h2>${m.slice(-3).reverse().map(r=>row(r,"far")).join("")}
+  <h2 class="lh">Your profile by layer</h2>${prof}
+  <div class="row"><button class="go" id="r">Retake the test</button></div></div>`;
+  document.getElementById("r").onclick=start;
+  window.scrollTo(0,0);
+}
+start();
+</script>
+</body>
+</html>
