@@ -42,6 +42,7 @@ button:focus-visible{outline:3px solid var(--a);outline-offset:2px}
 .track b{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--b);border:3px solid var(--card);box-shadow:0 0 0 1px var(--b)}
 .lh{margin:26px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
 .hide{display:none}
+.pm{border-style:dashed!important;color:var(--mute)}.note{font-size:.88rem;color:var(--mute);margin:10px 0}.rej{font-size:.9rem;margin:10px 0}
 </style>
 </head>
 <body>
@@ -49,129 +50,112 @@ button:focus-visible{outline:3px solid var(--a);outline-offset:2px}
 <div id="app"></div>
 </main>
 <script>
-// Dimensions: [layer, low pole, high pole]
-const D=[
-["Structure","Hereditary or sacral rule","Popular consent"],
-["Structure","Decentralized","Centralized"],
-["Economy","Communal ownership","Private ownership"],
-["Economy","State-directed","Free market"],
-["Social order","Egalitarian","Hierarchical"],
-["Social order","Progressive, secular","Traditional, religious"],
-["Values","Order and security","Liberty"],
-["Values","Technology-skeptic","Technology-embracing"],
-["Time","Restore the past","Build something new"],
-["Time","Gradual, preserving","Accelerating, disruptive"],
-["Methods","Reform","Revolution"],
-["Methods","Voluntary, nonviolent","Forceful"],
-["Scope","Own nation or group first","Humanity as a whole"],
-["Scope","Individual","Collective"]
-];
-// Questions: [dimension, direction (1 = agreeing pushes toward high pole), text]
+const D=[["Structure","Hereditary or sacral rule","Popular consent"],["Structure","Decentralized","Centralized"],["Economy","Communal ownership","Private ownership"],["Economy","State-directed","Free market"],["Social order","Egalitarian","Hierarchical"],["Social order","Progressive, secular","Traditional, religious"],["Values","Order and security","Liberty"],["Values","Technology-skeptic","Technology-embracing"],["Time","Restore the past","Build something new"],["Time","Gradual, preserving","Accelerating, disruptive"],["Methods","Reform","Revolution"],["Methods","Voluntary, nonviolent","Forceful"],["Scope","Own nation or group first","Humanity as a whole"],["Scope","Individual","Collective"]];
+// [trait, direction, statement, reason A, agreement value A, reason B, agreement value B]  (value -1 = skip)
 const Q=[
-[0,1,"Legitimate rulers are those chosen by the people they govern."],
-[0,-1,"Power is best passed down through family lines or granted by divine or sacred authority."],
-[1,1,"A strong central authority should be able to override local rules for the sake of unity."],
-[1,-1,"Most decisions should be made by small, local communities."],
-[2,1,"People should be free to own land, businesses and capital without limit."],
-[2,-1,"Land, factories and major resources should belong to the community, not individuals."],
-[3,1,"Prices and wages should be set by voluntary exchange, not by government."],
-[3,-1,"The state should plan or direct key parts of the economy."],
-[4,1,"A healthy society has clear ranks, with some people rightly holding more authority than others."],
-[4,-1,"Any rank or class distinction needs strong justification, and most cannot meet it."],
-[5,1,"Religion and inherited tradition should shape law and public life."],
-[5,-1,"Law should be built on reason and secular values, not tradition or faith."],
-[6,1,"Individual freedom matters more than social order when the two collide."],
-[6,-1,"A stable, orderly society is worth some loss of personal freedom."],
-[7,1,"Technology and growth are the main route to a better future."],
-[7,-1,"Industrial technology has damaged us, and we should scale it back."],
-[8,1,"The best society has not been built yet."],
-[8,-1,"Past societies understood things we have since lost, and we should recover them."],
-[9,1,"Speeding up social and technological change is better than slowing it down, even if it is chaotic."],
-[9,-1,"Change should be slow and cautious, preserving what already works."],
-[10,1,"Existing institutions are too broken to fix, and they need to be replaced."],
-[10,-1,"Lasting change comes through patient reform within existing institutions."],
-[11,1,"Using force against opponents is justified when the cause is important enough."],
-[11,-1,"Social order should rest only on voluntary cooperation and consent."],
-[12,1,"Our obligations to all humans matter as much as those to our own country or people."],
-[12,-1,"Our own nation, faith or people deserve priority over outsiders."],
-[13,1,"The needs of the community should outweigh individual preferences."],
-[13,-1,"The individual, not the group, is the basic unit of moral and political concern."]
+[0,1,"Legitimate rulers are those chosen by the people they govern.","Legitimacy comes from something else, such as tradition, competence or faith",0,"Elections alone don't confer legitimacy; rights and limits matter more",.5],
+[0,-1,"Power is best passed down through family lines or granted by sacred authority.","Rulers should be chosen by merit or expertise, not birth",.25,"Only the consent of the governed can justify power",0],
+[0,1,"Ordinary citizens should vote directly on major laws.","Most voters lack the expertise, so representatives or experts should decide",.25,"Nobody should rule others by law at all, voted or not",.5],
+[1,1,"A strong central authority should be able to override local rules for national unity.","Unity should come from voluntary agreement, not override",0,"It depends on the issue; some matters are national, others local",.5],
+[1,-1,"Most decisions should be made by small local communities.","Local rule breeds inequality and conflict; larger bodies are needed",.25,"Communities need a wider federation to coordinate",.5],
+[1,1,"A single national government should run education, healthcare and infrastructure.","These should be run privately or by communities, not by any government",0,"Different services suit different levels of government",.5],
+[2,1,"People should be free to own land, businesses and capital without limit.","Unlimited ownership concentrates power, so it needs limits",.25,"Ownership should be shared or communal, not individual",0],
+[2,-1,"Land, factories and major resources should belong to the community.","Ownership is fine when tied to what you actually use",.5,"Private property is a basic right no community can override",0],
+[2,1,"Inheriting wealth is a legitimate right.","Inherited wealth should be heavily taxed or capped",.25,"Wealth should return to the community or the land at death",0],
+[3,1,"Prices and wages should be set by voluntary exchange, not by government.","Markets need strong rules, and some prices should be fixed",.25,"Production should be planned democratically, not left to markets",0],
+[3,-1,"The state should plan or direct key parts of the economy.","Planning fails; markets handle information better",0,"Planning should be done by workers or communities, not the state",.5],
+[3,1,"Free trade across borders benefits nearly everyone in the long run.","Trade benefits some at others' expense and needs managing",.25,"Local, self-reliant economies matter more than trade",0],
+[4,1,"A healthy society has clear ranks, with some rightly holding more authority.","Authority should rest on skill and stay open to challenge",.25,"Rank is natural, but it carries duties rather than privileges",.75],
+[4,-1,"Any class or rank distinction needs strong justification, and most cannot meet it.","Some hierarchy is natural and useful and needs no apology",0,"Unequal outcomes are fine if opportunity is equal",.5],
+[4,1,"Experts and elites should have more say than ordinary people on major decisions.","Ordinary people know their own lives best",0,"Experts should advise but never decide",.25],
+[5,1,"Religion and inherited tradition should shape law and public life.","Religion is fine privately but must stay out of law",0,"Tradition should be examined by reason, not simply inherited",.25],
+[5,-1,"Law should be built on reason and secular values, not tradition or faith.","Reason itself rests on values that come from tradition or faith",.25,"Religion and reason aren't opposed; law can draw on both",.25],
+[5,1,"Family, community and nation are older and more important than individual choice.","Individual choice must come before inherited roles",0,"Family matters, but nation and community are not sacred",.5],
+[6,1,"Individual freedom matters more than social order when the two collide.","Freedom without a stable order can't last",0,"It depends on context; there is no general rule",.5],
+[6,-1,"A stable, orderly society is worth some loss of personal freedom.","Trading freedom for order usually ends up with neither",0,"Order should come from voluntary cooperation, not imposed limits",.25],
+[6,1,"Speech should be protected even when it is hateful or false.","Some speech does real harm and should be restricted",0,"Protection should depend on whether harm results",.5],
+[7,1,"Technology and economic growth are the main route to a better future.","Technology causes as many problems as it solves",0,"Wellbeing depends on culture and relationships more than tech",.25],
+[7,-1,"Industrial technology has damaged us, and we should scale it back.","Technology is neutral; it depends on how it is used",.5,"Scaling back would cost lives and freedoms we value",0],
+[7,1,"Humans should use technology to change their own bodies and minds, including extending life.","Human nature should be respected, not redesigned",0,"Only under strict regulation",.5],
+[8,1,"The best society has not been built yet.","The best societies existed in the past",0,"There is no best society, only trade-offs",.5],
+[8,-1,"Past societies understood things we have since lost, and we should recover them.","The past's injustices outweigh what we lost",0,"We should learn from the past, not copy it",.5],
+[8,1,"Political ideals should be judged by their future potential, not their record so far.","Track record is the only reliable evidence",0,"Both matter; neither alone is enough",.5],
+[9,1,"Speeding up social and technological change is better than slowing it, even if chaotic.","Fast change harms the vulnerable and loses things we value",0,"Pace should match the issue; no general rule applies",.5],
+[9,-1,"Change should be slow and cautious, preserving what already works.","Delay has costs, and some problems need urgent change",0,"Gradualism often just defends a bad status quo",.25],
+[9,1,"Letting broken systems collapse is better than propping them up.","Collapse hurts ordinary people most",0,"Systems should be repaired, not left to fail or deliberately broken",.25],
+[10,1,"Existing institutions are too broken to fix and need replacing.","Institutions can be improved from within",0,"Only some need replacing",.5],
+[10,-1,"Lasting change comes through patient reform inside existing institutions.","Reform has repeatedly failed, so institutions must be replaced",0,"Change comes from building alternatives outside institutions",.25],
+[10,1,"Withdrawing to build parallel communities is better than trying to reform the system.","Participation is a duty, and withdrawal gives up influence",0,"Parallel communities can work alongside reform",.5],
+[11,1,"Using force against opponents is justified when the cause is important enough.","Force is justified only in defense, not for a cause",.25,"Force corrupts any cause it serves",0],
+[11,-1,"Social order should rest only on voluntary cooperation and consent.","Some rules must be enforced even on those who don't consent",0,"Law needs enforcement power to work",0],
+[11,1,"A government should use harsh punishment to deter serious crime.","Harsh punishment doesn't deter; rehabilitation works better",0,"Punishment should be proportionate, not harsh for deterrence",.25],
+[12,1,"Our obligations to all humans matter as much as those to our own country or people.","Obligations are strongest to those closest to us, though not exclusive",.25,"Obligations are owed to individuals, not to nations or peoples",.5],
+[12,-1,"Our own nation, faith or people deserve priority over outsiders.","Everyone's interests count the same, whatever their origin",0,"Priority belongs to local communities, not nations",.5],
+[12,1,"Global problems should be solved by binding international institutions.","International bodies are unaccountable and shouldn't bind nations",0,"Cooperation should be voluntary and between peers",.25],
+[13,1,"The needs of the community should outweigh individual preferences.","The individual is the basic unit that matters morally",0,"Family or close groups matter, but not the state",.5],
+[13,-1,"The individual, not the group, is the basic unit of moral and political concern.","Individuals are shaped by communities and can't be separated from them",.25,"Some collective goods override individual wishes",0],
+[13,1,"Sacrifice for the nation or community is a citizen's duty.","Duty is owed to people, not abstractions like a nation",0,"Service should be voluntary, not a duty",.25]
 ];
-// Ideology profiles across the 14 dimensions (0 = low pole, 100 = high pole)
-const I=[
-["Absolute monarchism",[5,80,70,50,90,90,25,40,5,10,30,50,25,60]],
-["Constitutional monarchism",[55,50,65,60,65,80,55,50,25,10,5,15,35,50]],
-["Feudalism",[5,10,60,20,95,90,30,15,3,5,20,60,15,70]],
-["Neoreaction / Dark Enlightenment",[10,70,85,80,85,60,35,75,35,60,55,50,20,30]],
-["Classical liberalism",[75,25,85,85,35,45,90,65,60,30,10,10,70,15]],
-["Social democracy",[85,60,40,40,30,35,75,60,65,25,5,5,75,65]],
-["Democratic socialism",[85,65,25,25,20,25,75,60,75,35,15,8,80,75]],
-["Marxism-Leninism",[50,95,5,5,45,30,20,70,85,70,90,85,85,95]],
-["Anarcho-communism",[90,3,5,10,3,15,90,55,85,60,85,40,90,85]],
-["Anarcho-capitalism",[75,3,98,98,40,40,92,75,70,55,40,25,60,5]],
-["Minarchist libertarianism",[75,15,92,92,40,50,90,65,55,30,10,10,60,10]],
-["Fascism",[15,95,50,40,90,80,5,60,40,75,75,95,3,95]],
-["Theocracy",[10,70,50,40,85,98,15,25,5,20,40,60,20,75]],
-["Social conservatism",[65,40,75,65,65,85,55,45,25,10,5,10,40,45]],
-["Progressivism",[80,55,45,40,25,15,70,70,85,50,20,10,85,60]],
-["Technocracy",[30,85,55,50,70,25,35,95,80,50,20,20,65,55]],
-["Accelerationism",[35,40,70,85,55,20,60,100,95,98,70,45,45,25]],
-["Anarcho-primitivism",[90,3,20,15,5,40,85,0,10,70,90,40,60,70]],
-["Eco-socialism / Green politics",[85,40,30,30,25,30,70,30,60,25,15,8,85,70]],
-["Syndicalism",[85,30,15,15,20,25,70,60,75,45,70,40,85,85]],
-["Distributism",[75,35,50,45,40,75,60,35,25,15,10,10,60,60]],
-["National conservatism",[65,60,60,55,55,75,40,50,35,25,10,25,5,60]],
-["Ethnonationalism",[30,75,55,45,75,80,25,45,25,45,45,70,2,80]],
-["Network states / Technofeudalism",[55,10,80,80,55,25,70,95,80,70,30,15,55,25]],
-["Corporatism / Guild order",[40,65,50,35,70,70,35,45,30,15,10,20,35,80]],
-["Military rule (stratocracy)",[10,90,50,40,85,60,10,50,40,35,60,90,20,70]],
-["Mutualism",[90,10,40,50,15,30,75,50,70,30,50,10,80,50]],
-["Georgism",[85,40,45,70,30,30,75,65,65,20,5,5,80,35]],
-["Civic republicanism",[90,60,45,45,35,40,50,55,65,30,35,30,60,65]],
-["Libertarian municipalism",[95,10,15,20,10,25,70,55,75,35,35,15,85,85]],
-["Authoritarian populism",[55,80,55,45,70,70,20,50,40,40,30,60,15,65]],
-["Benevolent despotism",[5,95,55,50,90,40,25,70,60,45,35,60,50,60]],
-["Transhumanism",[70,35,70,75,35,10,90,100,95,70,20,10,80,25]]
-];
+// Ideologies: 14-trait profiles in the order of D
+const I=[["Monarchism",[5,80,70,50,90,90,25,40,5,10,30,50,25,60]],["Feudalism",[5,10,60,20,95,90,30,15,3,5,20,60,15,70]],["Neoreaction / Dark Enlightenment",[10,70,85,80,85,60,35,75,35,60,55,50,20,30]],["Classical liberalism",[75,25,85,85,35,45,90,65,60,30,10,10,70,15]],["Social democracy",[85,60,40,40,30,35,75,60,65,25,5,5,75,65]],["Democratic socialism",[85,65,25,25,20,25,75,60,75,35,15,8,80,75]],["Marxism-Leninism",[50,95,5,5,45,30,20,70,85,70,90,85,85,95]],["Anarcho-communism",[90,3,5,10,3,15,90,55,85,60,85,40,90,85]],["Anarcho-capitalism",[75,3,98,98,40,40,92,75,70,55,40,25,60,5]],["Minarchist libertarianism",[75,15,92,92,40,50,90,65,55,30,10,10,60,10]],["Fascism",[15,95,50,40,90,80,5,60,40,75,75,95,3,95]],["Religious traditionalism / theonomy",[10,70,50,40,85,98,15,25,5,20,40,60,20,75]],["Social conservatism",[65,40,75,65,65,85,55,45,25,10,5,10,40,45]],["Progressivism",[80,55,45,40,25,15,70,70,85,50,20,10,85,60]],["Technocracy",[30,85,55,50,70,25,35,95,80,50,20,20,65,55]],["Accelerationism",[35,40,70,85,55,20,60,100,95,98,70,45,45,25]],["Anarcho-primitivism",[90,3,20,15,5,40,85,0,10,70,90,40,60,70]],["Eco-socialism / Green politics",[85,40,30,30,25,30,70,30,60,25,15,8,85,70]],["Syndicalism",[85,30,15,15,20,25,70,60,75,45,70,40,85,85]],["Distributism",[75,35,50,45,40,75,60,35,25,15,10,10,60,60]],["National conservatism",[65,60,60,55,55,75,40,50,35,25,10,25,5,60]],["Ethnonationalism",[30,75,55,45,75,80,25,45,25,45,45,70,2,80]],["Network-state thinking",[55,10,80,80,55,25,70,95,80,70,30,15,55,25]],["Mutualism",[90,10,40,50,15,30,75,50,70,30,50,10,80,50]],["Libertarian municipalism",[95,10,15,20,10,25,70,55,75,35,35,15,85,85]],["Authoritarian populism",[55,80,55,45,70,70,20,50,40,40,30,60,15,65]],["Transhumanism",[70,35,70,75,35,10,90,100,95,70,20,10,80,25]]];
+// Government types: scored on traits 0,1,4,5,6,11 only
+const GT=[0,1,4,5,6,11];
+const G=[["Absolute monarchy",[5,80,90,90,25,50]],["Constitutional monarchy",[55,50,65,80,55,15]],["Feudal order",[5,10,95,90,30,60]],["Theocracy",[10,70,85,98,15,60]],["Aristocratic republic / oligarchy",[25,40,85,60,45,35]],["Direct democracy",[98,15,15,30,65,10]],["Liberal representative democracy",[80,45,35,40,80,8]],["Minimal-state constitutional republic",[75,15,40,50,90,10]],["Technocracy",[30,85,70,25,35,20]],["One-party state",[45,95,50,30,20,85]],["Military junta",[10,90,85,60,10,90]],["Autocracy / benevolent dictatorship",[5,95,90,40,25,60]],["Corporatist state",[40,65,70,70,35,20]],["Council or commune federation",[92,10,10,25,70,25]],["Stateless voluntary society",[90,3,5,20,92,30]],["Charter cities / network-state confederation",[55,10,55,25,70,15]]];
 const OPT=[["Strongly agree",1],["Agree",.75],["Unsure or mixed",.5],["Disagree",.25],["Strongly disagree",0]];
 const app=document.getElementById("app");
-let i=0,ans=[];
+let i=0,ans=[],R=[];
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const bar=()=>`<div class="bar"><i style="width:${i/Q.length*100}%"></i></div>`;
 
 function start(){
   app.innerHTML=`<div class="card"><h1>The Layered Political Test</h1>
-  <p class="mute">Instead of one left-right score, this test measures 14 separate traits across 7 layers: structure of government, economy, social order, values, relationship to time, methods and scope.</p>
-  <p class="mute">There are ${Q.length} statements and no right answers. At the end you will see your full profile and the ${I.length} ideologies and government forms that match it most and least closely.</p>
+  <p class="mute">Instead of one left-right score, this test measures 14 separate traits across 7 layers: structure, economy, social order, values, time, methods and scope.</p>
+  <p class="mute">There are ${Q.length} statements. If a statement's premise doesn't fit your thinking, choose "I disagree with the premise" and tell us why, with options written for that statement. Results are split into <b>government types</b> and <b>ideologies</b>.</p>
   <p><button class="go" id="s">Start the test</button></p>
-  <p class="mute" style="font-size:.85rem">A rough map, not a verdict. Each ideology profile is a simplified summary, and real adherents vary widely.</p></div>`;
-  document.getElementById("s").onclick=()=>{i=0;ans=[];ask()};
+  <p class="mute" style="font-size:.85rem">A rough map, not a verdict. Profiles are simplified, and real adherents vary widely.</p></div>`;
+  document.getElementById("s").onclick=()=>{i=0;ans=[];R=[];ask()};
 }
-
 function ask(){
   const q=Q[i],d=D[q[0]];
-  app.innerHTML=`<div class="bar"><i style="width:${i/Q.length*100}%"></i></div>
-  <div class="card"><div class="layer">${d[0]}</div><div class="mute" style="font-size:.85rem">Statement ${i+1} of ${Q.length}</div>
+  app.innerHTML=`${bar()}<div class="card"><div class="layer">${d[0]}</div><div class="mute" style="font-size:.85rem">Statement ${i+1} of ${Q.length}</div>
   <p class="q">${esc(q[2])}</p>
-  <div class="opts">${OPT.map((o,k)=>`<button data-k="${k}">${o[0]}</button>`).join("")}</div>
-  <div class="row"><button class="ghost" id="back" ${i?"":"disabled"}>Back</button><span class="mute" style="font-size:.85rem">Skip nothing: "Unsure" counts as neutral</span></div></div>`;
-  app.querySelectorAll(".opts button").forEach(b=>b.onclick=()=>{ans[i]=OPT[+b.dataset.k][1];i++;i<Q.length?ask():result()});
+  <div class="opts">${OPT.map((o,k)=>`<button data-k="${k}">${o[0]}</button>`).join("")}<button class="pm" id="pm">I disagree with the premise of this statement</button></div>
+  <div class="row"><button class="ghost" id="back" ${i?"":"disabled"}>Back</button></div></div>`;
+  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ans[i]=OPT[+b.dataset.k][1];R[i]="";next()});
+  document.getElementById("pm").onclick=why;
   document.getElementById("back").onclick=()=>{if(i){i--;ask()}};
 }
-
+function why(){
+  const q=Q[i];
+  app.innerHTML=`${bar()}<div class="card"><div class="layer">You disagree with the premise</div>
+  <p class="q">${esc(q[2])}</p><p class="note">Which is closest to why?</p>
+  <div class="opts">${[3,5].map(t=>`<button data-t="${t}">${esc(q[t])}</button>`).join("")}<button class="pm" id="sk">None of these fit (skip this statement)</button></div>
+  <div class="row"><button class="ghost" id="back">Back to the statement</button></div></div>`;
+  app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=+b.dataset.t;ans[i]=q[t+1];R[i]=q[t];next()});
+  document.getElementById("sk").onclick=()=>{ans[i]=-1;R[i]="No listed reason fit";next()};
+  document.getElementById("back").onclick=ask;
+}
+function next(){i++;i<Q.length?ask():result()}
+const sim=(v,s,idx)=>{let t=0,n=0;idx.forEach((k,j)=>{if(s[k]!==null){t+=Math.abs(v[j]-s[k]);n++}});return n?Math.round(100-t/n):0};
 function result(){
-  const s=D.map((_,k)=>{let t=0,n=0;Q.forEach((q,j)=>{if(q[0]===k){t+=q[1]>0?ans[j]:1-ans[j];n++}});return Math.round(t/n*100)});
-  const m=I.map(([n,v])=>[n,Math.round(100-v.reduce((a,x,k)=>a+Math.abs(x-s[k]),0)/v.length)]).sort((a,b)=>b[1]-a[1]);
+  const s=D.map((_,k)=>{let t=0,n=0;Q.forEach((q,j)=>{if(q[0]===k&&ans[j]>=0){t+=q[1]>0?ans[j]:1-ans[j];n++}});return n?Math.round(t/n*100):null});
+  const all=D.map((_,k)=>k);
+  const mi=I.map(([n,v])=>[n,sim(v,s,all)]).sort((a,b)=>b[1]-a[1]);
+  const mg=G.map(([n,v])=>[n,sim(v,s,GT)]).sort((a,b)=>b[1]-a[1]);
   const row=(r,c)=>`<div class="match ${c}"><div class="t"><span>${r[0]}</span><span>${r[1]}%</span></div><div class="m"><i style="width:${r[1]}%"></i></div></div>`;
   let prof="",last="";
   D.forEach((d,k)=>{
     if(d[0]!==last){prof+=`<h3 class="lh">${d[0]}</h3>`;last=d[0]}
-    prof+=`<div class="dim"><div class="lab"><span>${d[1]}</span><span>${d[2]}</span></div><div class="track"><b style="left:${s[k]}%"></b></div></div>`;
+    prof+=`<div class="dim"><div class="lab"><span>${d[1]}</span><span>${d[2]}</span></div>`+(s[k]===null?`<p class="note">Not scored: you rejected every statement for this trait.</p>`:`<div class="track"><b style="left:${s[k]}%"></b></div>`)+`</div>`;
   });
-  app.innerHTML=`<div class="card"><h2>Your closest matches</h2>
-  <p class="mute">Similarity compares your whole 14-trait profile with each ideology, not a single label.</p>
-  ${m.slice(0,6).map(r=>row(r,"")).join("")}
-  <h2 class="lh">Furthest from you</h2>${m.slice(-3).reverse().map(r=>row(r,"far")).join("")}
+  const rej=Q.map((q,j)=>R[j]?`<p class="rej"><b>${esc(q[2])}</b><br><span class="mute">Your reason: ${esc(R[j])}</span></p>`:"").join("");
+  app.innerHTML=`<div class="card"><h2>Government types</h2>
+  <p class="mute">Based on the six traits about how power is held and exercised: source of power, centralization, hierarchy, tradition, liberty and force.</p>
+  ${mg.slice(0,5).map(r=>row(r,"")).join("")}<h3 class="lh">Furthest from you</h3>${mg.slice(-2).reverse().map(r=>row(r,"far")).join("")}
+  <h2 class="lh">Ideologies</h2><p class="mute">Based on your full 14-trait profile.</p>
+  ${mi.slice(0,6).map(r=>row(r,"")).join("")}<h3 class="lh">Furthest from you</h3>${mi.slice(-3).reverse().map(r=>row(r,"far")).join("")}
   <h2 class="lh">Your profile by layer</h2>${prof}
+  ${rej?`<h2 class="lh">Premises you rejected</h2><p class="mute">These were scored using your stated reason, or left out if you skipped.</p>${rej}`:""}
   <div class="row"><button class="go" id="r">Retake the test</button></div></div>`;
   document.getElementById("r").onclick=start;
   window.scrollTo(0,0);
